@@ -7,9 +7,11 @@ size = WIDTH, HEIGHT = 1500, 1000
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 tplay1 = 1
 tplay2 = 1
+ships_1, ships_2 = [], []
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+ship_group = pygame.sprite.Group()
 clock = pygame.time.Clock()
 FPS = 10
 
@@ -29,6 +31,7 @@ def load_level(filename):
 
 def generate_level(level):
     new_player, x, y = None, None, None
+    global ships_1, ships_2
     global tplay1, tplay2
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -40,19 +43,29 @@ def generate_level(level):
                 Tile('empty', x, y)
                 new_player = Player(x, y)
             elif level[y][x] == '+' and tplay1 == 1:
-                Tile('Corvette_1', x, y)
+                Tile('empty', x, y)
+                corv = Corvette('Corvette_1', x, y)
+                ships_1.append(corv)
             elif level[y][x] == '+' and tplay1 == 2:
-                Tile('Сruiser_1', x, y)
+                Tile('empty', x, y)
+                corv = Cruiser('Сruiser_1', x, y)
+                ships_1.append(corv)
             elif level[y][x] == '+' and tplay1 == 3:
-                Tile('Battleship_1', x, y)
-                battleship_blue = Battleship(x, y, 'north')
+                Tile('empty', x, y)
+                corv = Battleship('Battleship_1', x, y)
+                ships_1.append(corv)
             elif level[y][x] == '-' and tplay2 == 1:
-                Tile('Corvette_2', x, y)
+                Tile('empty', x, y)
+                corv = Corvette('Corvette_2', x, y)
+                ships_2.append(corv)
             elif level[y][x] == '-' and tplay2 == 2:
-                Tile('Сruiser_2', x, y)
+                Tile('empty', x, y)
+                corv = Cruiser('Сruiser_2', x, y)
+                ships_1.append(corv)
             elif level[y][x] == '-' and tplay2 == 3:
-                Tile('Battleship_2', x, y)
-                battleship_red = Battleship(x, y, 'south')
+                Tile('empty', x, y)
+                corv = Battleship('Battleship_2', x, y)
+                ships_1.append(corv)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -79,14 +92,18 @@ def load_image(name, colorkey=None):
 tile_images = {
     'wall': load_image('asteroid.png'),
     'empty': load_image('space.png'),
-    'Corvette_1': load_image('Corvette_1.png'),
-    'Corvette_2': load_image('Corvette_2.png'),
-    'Сruiser_1': load_image('Сruiser_1.png'),
-    'Сruiser_2': load_image('Сruiser_2.png'),
-    'Battleship_1': load_image('Battleship_1.png'),
-    'Battleship_2': load_image('Battleship_2.png')
 
 }
+
+ship_images = {
+    'Corvette_1': load_image('Corvette_1.png').convert_alpha(),
+    'Corvette_2': load_image('Corvette_2.png').convert_alpha(),
+    'Сruiser_1': load_image('Сruiser_1.png').convert_alpha(),
+    'Сruiser_2': load_image('Сruiser_2.png').convert_alpha(),
+    'Battleship_1': load_image('Battleship_1.png').convert_alpha(),
+    'Battleship_2': load_image('Battleship_2.png').convert_alpha()
+}
+
 player_image = load_image('space.png', -1)
 
 tile_width = tile_height = 50
@@ -108,22 +125,40 @@ class Player(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
 
 
-class Corvette:
-    pass
-
-
-class Cruiser:
-    pass
-
-
-class Battleship:
-    def __init__(self, pos_x, pos_y, dir):
-        self.coord = [(pos_x, pos_y), (pos_x + 1, pos_y), (pos_x, pos_y + 1), (pos_x + 1, pos_y + 1), (pos_x, pos_y + 2),
-                 (pos_x + 1, pos_y + 2)]
-        self.direction = dir
+class Corvette(pygame.sprite.Sprite):
+    def __init__(self, ship_type, pos_x, pos_y):
+        super().__init__(ship_group, all_sprites)
+        self.ship_type = ship_type
+        self.image = ship_images[ship_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
 
     def show(self):
-        return self.coord, self.direction
+        return self.ship_type
+
+
+class Cruiser(pygame.sprite.Sprite):
+    def __init__(self, ship_type, pos_x, pos_y):
+        super().__init__(ship_group, all_sprites)
+        self.ship_type = ship_type
+        self.image = ship_images[ship_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+
+    def show(self):
+        return self.ship_type
+
+
+class Battleship(pygame.sprite.Sprite):
+    def __init__(self, ship_type, pos_x, pos_y):
+        super().__init__(ship_group, all_sprites)
+        self.ship_type = ship_type
+        self.image = ship_images[ship_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+
+    def show(self):
+        return self.ship_type
 
 
 class Camera:
@@ -185,6 +220,7 @@ class SimpleScene:
 class GameState:
     def __init__(self):
         global tplay1, tplay2
+        global ships_1, ships_2
         self.tplay1 = tplay1
         self.tplay2 = tplay2
         print(self.tplay1, self.tplay2)
@@ -392,6 +428,8 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     dt = 0
+    pygame.mixer.music.load('sounds/New Composition #1.mp3')
+    pygame.mixer.music.play(-1)
     scenes = {
         'TITLE': SimpleScene('PLAYER 1', 'Приветствую в игре "КОСМИЧЕКИЙ БОЙ"', '', '', '',
                              'нажмите [ПРОБЕЛ] чтобы начать'),
